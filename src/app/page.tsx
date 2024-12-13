@@ -7,7 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
 import { useEffect, useState } from "react";
-import { RepositoryTable, UserSearchResults } from "./components";
+import { UserSearchResults } from "./components";
+import RepositoryTable from './RepositoryTable';
 import { IPaginationData, ISort, ITableFilterValue } from "./interfaces";
 
 const formSchema = z.object({
@@ -37,8 +38,10 @@ export default function Home() {
 
     if (!header) return {} as IPaginationData;
     // this needs to be made easier to read - and there may not be a 'link' header
-    const paginationLinksText = header.split(",").reduce((acc, part) => {
-      const match = part.match(/<([^>]+)>;\s*rel="([^"]+)"/);
+    const paginationLinksText = header.split(",");
+
+    for(let i = 0; i < paginationLinksText.length; i++) {
+      const match = paginationLinksText[i].match(/<([^>]+)>;\s*rel="([^"]+)"/);
       if (match) {
         const [_, url, rel] = match;
         if(rel === "last") {
@@ -49,15 +52,14 @@ export default function Home() {
           const urlParams = new URLSearchParams(url);
           currentPage = parseInt(urlParams.get("page") ?? "1") - 1;
         }
-        acc[rel] = url;
       }
-      return acc;
-    }, {} as IPaginationData["links"]);
+    }
 
-    return { totalPages, links: paginationLinksText, currentPage };
+    return { totalPages, currentPage };
   }
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    console.log('submitted!', data);
     if (!data) return;
     setQueryString(`https://api.github.com/users/${data.name}/repos?per_page=10`);
   };
@@ -101,6 +103,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!queryString) return;
+    console.log('query string', queryString);
     const fetchRepositories = async () => {
       const res = await fetch(
         queryString,

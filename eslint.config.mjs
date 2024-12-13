@@ -11,6 +11,12 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    env: {
+     "jest/globals": true
+   },
+   plugin: ["jest"]
+  }
 ];
 
 export default eslintConfig;
