@@ -2,8 +2,9 @@
 
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IPaginationData } from "./interfaces";
+import { IPaginationData, ISort, ISortKeys } from "./interfaces";
 import { ArrowUpDown } from 'lucide-react';
+import { useEffect, useState } from "react";
 
 interface IUser {
   login: string;
@@ -36,29 +37,33 @@ export const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
   );
 };
 
+// sort - stars, forks, help-wanted-issues, updated
 interface IGitHubRepository {
-	name: string;
-	updated_at: string;
-	stargazers_count: number;
-	open_issues_count: number;
-	forks_count: number;
-	archived: boolean;
-	html_url: string;
-	owner: {
-		login: string;
-		avatar_url: string;
-	}
+  name: string;
+  updated_at: string;
+  stargazers_count: number;
+  open_issues_count: number;
+  forks_count: number;
+  archived: boolean;
+  html_url: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  };
 }
 
 interface IRepositoryTableProps {
   repositories: IGitHubRepository[];
   paginations: IPaginationData | null;
   onPaginate: (page: number) => void;
+  onSort: (sort: ISort) => Promise<void>;
 }
 
 //gotta track teh current pagination
-export const RepositoryTable = ({ repositories, paginations, onPaginate }: IRepositoryTableProps) => {
+export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort }: IRepositoryTableProps) => {
 	const { currentPage, totalPages } = paginations ?? { currentPage: 1, totalPages: 1 };
+	const [sortDirection, setSortDirection] = useState<ISort>({} as ISort);
+
 	const generatePaginationItems = () => {
     // display either the first page or page before the current page
     const startPage = Math.max(1, currentPage - 1);
@@ -83,17 +88,50 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate }: IRepo
     }
     return items;
   }
+
+	const onClickSort = (sortKey: ISortKeys) => {
+    if(sortDirection.sortKey !== sortKey) {
+			setSortDirection({sortKey, order: "asc"});
+		} else {
+			setSortDirection(previousSort => ({
+				sortKey,
+				order: previousSort.order === "asc" ? "desc" : "asc"
+			}));
+		}
+	};
+
+	useEffect(() => {
+		const sortContents = async () => {
+			await onSort(sortDirection);
+		}
+		sortContents();
+	}, [sortDirection]);
+
 	return (
     <Table>
       <TableCaption>Repositories</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead className="w-[100px]">Name</TableHead>
-          <TableHead>Open Issues</TableHead>
-          <TableHead>Forks</TableHead>
-          <TableHead className="text-right">Stars</TableHead>
-          <TableHead className="text-right">Last Updated</TableHead>
-          <TableHead className="text-right">Url</TableHead>
+          <TableHead onClick={() => onClickSort("help-wanted-issues")}>
+            Open Issues {<ArrowUpDown />}
+          </TableHead>
+          <TableHead onClick={() => onClickSort("forks")}>
+            Forks
+            {<ArrowUpDown />}
+          </TableHead>
+          <TableHead
+            className="text-right"
+            onClick={() => onClickSort("stars")}
+          >
+            Stars {<ArrowUpDown />}
+          </TableHead>
+          <TableHead
+            className="text-right"
+            onClick={() => onClickSort("updated")}
+          >
+            Last Updated {<ArrowUpDown />}
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -112,26 +150,30 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate }: IRepo
         ))}
       </TableBody>
       <TableFooter>
-        {totalPages > 1 && (<Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => onPaginate(currentPage - 1)}
-                href="#"
-              />
-            </PaginationItem>
-            {generatePaginationItems()}
-            {currentPage !== totalPages && <PaginationItem>
-              <PaginationEllipsis />
-            </PaginationItem>}
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => onPaginate(currentPage + 1)}
-                href="#"
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>)}
+        {totalPages > 1 && (
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => onPaginate(currentPage - 1)}
+                  href="#"
+                />
+              </PaginationItem>
+              {generatePaginationItems()}
+              {currentPage !== totalPages && (
+                <PaginationItem>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              )}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => onPaginate(currentPage + 1)}
+                  href="#"
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        )}
       </TableFooter>
     </Table>
   );

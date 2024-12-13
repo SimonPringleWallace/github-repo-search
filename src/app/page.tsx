@@ -8,7 +8,7 @@ import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
 import { useState } from "react";
 import { RepositoryTable, UserSearchResults } from "./components";
-import { IPaginationData } from "./interfaces";
+import { IPaginationData, ISort } from "./interfaces";
 
 const formSchema = z.object({
   name: z.string().nonempty({
@@ -83,7 +83,7 @@ export default function Home() {
     if(page > paginationLinks!.totalPages) return;
 
     const res = await fetch(
-      `https://api.github.com/user/1969638/repos?per_page=10&page=${page}`,
+      `https://api.github.com/users/${selectedUser}/repos?per_page=10&page=${page}`,
       {
         headers: {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
@@ -109,6 +109,24 @@ export default function Home() {
       const resJson = await res.json();
       setUserResults(resJson.items);
   }, 500)
+
+  const onSort = async (sort: ISort) => {
+    if (!selectedUser || !sort) return;
+    const { sortKey, order} = sort;
+    const res = await fetch(
+      `https://api.github.com/users/${selectedUser}/repos?per_page=10&sort=${sortKey}&direction=${order}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+        },
+      }
+    );
+    const resJson = await res.json();
+    const linkHeader = res.headers.get("Link");
+    const paginationData = parseLinkHeader(linkHeader);
+    setPaginationLinks(paginationData);
+    setRepositories(resJson);
+  }
 
   return (
     <div className="mt-20">
@@ -154,6 +172,7 @@ export default function Home() {
           onPaginate={onPaginate}
           paginations={paginationLinks}
           repositories={repositories}
+          onSort={onSort}
         />
       )}
     </div>

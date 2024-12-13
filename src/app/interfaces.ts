@@ -8,3 +8,10 @@ export interface IPaginationData {
 	currentPage: number;
 	totalPages: number;
 }
+
+export type ISortKeys = "stars" | "forks" | "help-wanted-issues" | "updated";
+
+export interface ISort {
+	sortKey: ISortKeys;
+	order: "asc" | "desc";
+}
