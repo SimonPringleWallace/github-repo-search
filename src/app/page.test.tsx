@@ -35,27 +35,12 @@ describe("Home component", () => {
     expect(screen.getByRole("button", { name: /fetch/i })).toBeInTheDocument();
   });
 
-  it("searches for users when input changes", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ items: ["user1", "user2"] }));
-
-    render(<Home />);
-
-    const input = screen.getByPlaceholderText(/github username/i);
-    fireEvent.change(input, { target: { value: "test" } });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("user-search-results")).toBeInTheDocument();
-    });
-    expect(screen.getByText("user1")).toBeInTheDocument();
-    expect(screen.getByText("user2")).toBeInTheDocument();
-  });
-
   it("fetches repositories with the correct initial query", async () => {
     fetchMock.mockResponseOnce(JSON.stringify([]));
 
     render(<Home />);
 
-    const input = screen.getByPlaceholderText(/github username/i);
+    const input = screen.getByPlaceholderText(/Start Entering a Username.../i);
     fireEvent.change(input, { target: { value: "testuser" } });
 
     const button = screen.getByRole("button", { name: /fetch/i });

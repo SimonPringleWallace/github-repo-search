@@ -20,7 +20,6 @@ interface IUserSearchResult {
 }
 
 export const UserSearchResults = ({ users, ref, setUser }: IUserSearchResult) => {
-	
 	if(!users) return null;
 
   return (

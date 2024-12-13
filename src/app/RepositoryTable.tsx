@@ -75,6 +75,7 @@ interface IRepositoryTableProps {
   repositories: IGitHubRepository[];
   paginationData: IPaginationData | null;
   filterValue: ITableFilterValue;
+	userName: string;
   onPaginate: (page: number) => void;
   onSort: (sort: ISort) => Promise<void>;
   onChangeFilter: (filter: ITableFilterValue) => void;
@@ -85,6 +86,7 @@ export const RepositoryTable = ({
   repositories,
   paginationData,
   filterValue,
+	userName,
   onChangeFilter,
   onPaginate,
   onSort,
@@ -112,6 +114,7 @@ export const RepositoryTable = ({
 
   return (
     <div className="flex flex-col align-end">
+			<h1 className="text-2xl font-bold">Repositories for {userName}</h1>
       <Select
         value={filterValue}
         onValueChange={(value) => onChangeFilter(value as ITableFilterValue)}

@@ -82,13 +82,17 @@ export default function Home() {
 
   const searchForUsers = useDebouncedCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const res = await fetch(`https://api.github.com/search/users?q=${e.target.value}`, {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-        },
-      })
-      const resJson = await res.json();
-      setUserResults(resJson.items);
+      try {
+        const res = await fetch(`https://api.github.com/search/users?q=${e.target.value}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+          },
+        })
+        const resJson = await res.json();
+        setUserResults(resJson.items);
+      } catch (e) {
+        console.error(e);
+      }
   }, 500)
 
   const onSort = async (sort: ISort) => {
@@ -123,22 +127,25 @@ export default function Home() {
 
   useEffect(() => {
     if (!queryString) return;
-    console.log('query string', queryString);
     const fetchRepositories = async () => {
-      const res = await fetch(
-        queryString,
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-          },
-        }
-      );
-      const resJson = await res.json();
-      // for pagination
-      const linkHeader = res.headers.get("Link");
-      const paginationData = parseLinkHeader(linkHeader);
-      setPaginationData(paginationData);
-      setRepositories(resJson);
+      try {
+        const res = await fetch(
+          queryString,
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+            },
+          }
+        );
+        const resJson = await res.json();
+        // for pagination
+        const linkHeader = res.headers.get("Link");
+        const paginationData = parseLinkHeader(linkHeader);
+        setPaginationData(paginationData);
+        setRepositories(resJson);
+      } catch (e) {
+        console.error(e);
+      }
     };
     fetchRepositories();
   }, [queryString])
@@ -173,6 +180,7 @@ export default function Home() {
                       value={selectedUser || value}
                       onChange={(e) => {
                         setSelectedUser(null);
+                        setRepositories([]);
                         searchForUsers(e);
                         onChange(e.target.value);
                       }}
@@ -200,6 +208,7 @@ export default function Home() {
       </Form>
       {repositories.length > 0 && (
         <RepositoryTable
+          userName={selectedUser!}
           onPaginate={onPaginate}
           paginationData={paginationData}
           repositories={repositories}
