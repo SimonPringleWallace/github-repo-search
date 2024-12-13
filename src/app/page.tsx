@@ -6,9 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RepositoryTable, UserSearchResults } from "./components";
-import { IPaginationData, ISort } from "./interfaces";
+import { IPaginationData, ISort, ITableFilterValue } from "./interfaces";
 
 const formSchema = z.object({
   name: z.string().nonempty({
@@ -21,6 +21,8 @@ export default function Home() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [repositories, setRepositories] = useState([]);
   const [paginationLinks, setPaginationLinks] = useState<IPaginationData | null>(null);
+  const [filterValue, setFilterValue] = useState<ITableFilterValue>("all");
+  const [queryString, setQueryString] = useState<string>("");
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,20 +58,8 @@ export default function Home() {
   }
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    const res = await fetch(
-      `https://api.github.com/users/${data.name}/repos?per_page=10`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-        },
-      }
-    );
-    const resJson = await res.json();
-    // for pagination
-    const linkHeader = res.headers.get("Link");
-    const paginationData = parseLinkHeader(linkHeader);
-    setPaginationLinks(paginationData);
-    setRepositories(resJson);
+    if (!data) return;
+    setQueryString(`https://api.github.com/users/${data.name}/repos?per_page=10`);
   };
 
   const onSelectUser = (user: string) => {
@@ -82,20 +72,9 @@ export default function Home() {
     if(page < 1) return;
     if(page > paginationLinks!.totalPages) return;
 
-    const res = await fetch(
-      `https://api.github.com/users/${selectedUser}/repos?per_page=10&page=${page}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-        },
-      }
-    );
-    // TODO: this is dupliate code and should be broken out 
-    const resJson = await res.json();
-     const linkHeader = res.headers.get("Link");
-     const paginationData = parseLinkHeader(linkHeader);
-     setPaginationLinks(paginationData);
-     setRepositories(resJson);
+    const searchParams = new URLSearchParams(queryString.split("?")[1]);
+    searchParams.set("page", page.toString());
+    setQueryString(`${queryString.split("?")[0]}?${searchParams.toString()}`);
   };
 
   const searchForUsers = useDebouncedCallback(
@@ -113,20 +92,40 @@ export default function Home() {
   const onSort = async (sort: ISort) => {
     if (!selectedUser || !sort) return;
     const { sortKey, order} = sort;
-    const res = await fetch(
-      `https://api.github.com/users/${selectedUser}/repos?per_page=10&sort=${sortKey}&direction=${order}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
-        },
-      }
-    );
-    const resJson = await res.json();
-    const linkHeader = res.headers.get("Link");
-    const paginationData = parseLinkHeader(linkHeader);
-    setPaginationLinks(paginationData);
-    setRepositories(resJson);
+
+    const searchParams = new URLSearchParams(queryString.split("?")[1]);
+    searchParams.set("sort", sortKey);
+    searchParams.set("direction", order);
+    setQueryString(`${queryString.split("?")[0]}?${searchParams.toString()}`);
   }
+
+  useEffect(() => {
+    if (!queryString) return;
+    const fetchRepositories = async () => {
+      const res = await fetch(
+        queryString,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+          },
+        }
+      );
+      const resJson = await res.json();
+      // for pagination
+      const linkHeader = res.headers.get("Link");
+      const paginationData = parseLinkHeader(linkHeader);
+      setPaginationLinks(paginationData);
+      setRepositories(resJson);
+    };
+    fetchRepositories();
+  }, [queryString])
+
+  //TODO: we likely don't need all these seperate functions for different sorts and such
+  useEffect(() => {
+    const searchParams = new URLSearchParams(queryString.split("?")[1]);
+    searchParams.set("type", filterValue);
+    setQueryString(`${queryString.split("?")[0]}?${searchParams.toString()}`);
+  }, [filterValue]);
 
   return (
     <div className="mt-20">
@@ -173,6 +172,8 @@ export default function Home() {
           paginations={paginationLinks}
           repositories={repositories}
           onSort={onSort}
+          filterValue={filterValue}
+          onChangeFilter={setFilterValue}
         />
       )}
     </div>

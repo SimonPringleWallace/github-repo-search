@@ -9,9 +9,10 @@ export interface IPaginationData {
 	totalPages: number;
 }
 
-export type ISortKeys = "created" | "updated" | "pushed" | "full_name";
+export type ITableSortKeys = "created" | "updated" | "pushed" | "full_name";
+export type ITableFilterValue = "all" | "owner" | "member";
 
 export interface ISort {
-	sortKey: ISortKeys;
+	sortKey: ITableSortKeys;
 	order: "asc" | "desc";
 }

@@ -2,10 +2,11 @@
 
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { IPaginationData, ISort, ISortKeys } from "./interfaces";
+import { IPaginationData, ISort, ITableFilterValue, ITableSortKeys } from "./interfaces";
 import { ArrowUpDown } from 'lucide-react';
 import { useEffect, useState } from "react";
 import { dateFormatter } from "@/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IUser {
   login: string;
@@ -58,12 +59,14 @@ interface IGitHubRepository {
 interface IRepositoryTableProps {
   repositories: IGitHubRepository[];
   paginations: IPaginationData | null;
+	filterValue: ITableFilterValue;
   onPaginate: (page: number) => void;
   onSort: (sort: ISort) => Promise<void>;
+	onChangeFilter: (filter: ITableFilterValue) => void;
 }
 
 //gotta track teh current pagination
-export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort }: IRepositoryTableProps) => {
+export const RepositoryTable = ({ repositories, paginations, filterValue, onChangeFilter, onPaginate, onSort }: IRepositoryTableProps) => {
 	const { currentPage, totalPages } = paginations ?? { currentPage: 1, totalPages: 1 };
 	const [sortDirection, setSortDirection] = useState<ISort>({} as ISort);
 
@@ -92,7 +95,7 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort 
     return items;
   }
 
-	const onClickSort = (sortKey: ISortKeys) => {
+	const onClickSort = (sortKey: ITableSortKeys) => {
     if(sortDirection.sortKey !== sortKey) {
 			setSortDirection({sortKey, order: "asc"});
 		} else {
@@ -109,86 +112,98 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort 
 		}
 		sortContents();
 	}, [sortDirection]);
-// created updated pushed full_name
+
 	return (
-    <Table>
-      <TableCaption>Repositories</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead
-            className="w-[100px]"
-            onClick={() => onClickSort("full_name")}
-          >
-            Name
-            {<ArrowUpDown />}
-          </TableHead>
-          <TableHead>Open Issues</TableHead>
-          <TableHead>Forks</TableHead>
-          <TableHead className="text-right">Stars</TableHead>
-          <TableHead
-            className="text-right"
-            onClick={() => onClickSort("updated")}
-          >
-            Last Updated {<ArrowUpDown />}
-          </TableHead>
-          <TableHead
-            className="text-right"
-            onClick={() => onClickSort("created")}
-          >
-            Created At {<ArrowUpDown />}
-          </TableHead>
-          <TableHead
-            className="text-right"
-            onClick={() => onClickSort("pushed")}
-          >
-            Last Push {<ArrowUpDown />}
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {repositories.map((repo) => (
-          <TableRow key={repo.name}>
-            <TableCell className="font-medium">
-              <a key={repo.name} target="_blank" href={repo.html_url}>
-                {repo.name}
-              </a>
-            </TableCell>
-            <TableCell>{repo.open_issues_count}</TableCell>
-            <TableCell>{repo.forks_count}</TableCell>
-            <TableCell>{repo.stargazers_count}</TableCell>
-            <TableCell>{dateFormatter(repo.updated_at)}</TableCell>
-            <TableCell>{dateFormatter(repo.created_at)}</TableCell>
-            <TableCell>{dateFormatter(repo.pushed_at)}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-      <TableFooter>
-        {totalPages > 1 && (
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => onPaginate(currentPage - 1)}
-                  href="#"
-                />
-              </PaginationItem>
-              {generatePaginationItems()}
-              {currentPage !== totalPages && (
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              )}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => onPaginate(currentPage + 1)}
-                  href="#"
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        )}
-      </TableFooter>
-    </Table>
+		<div>
+			<Select value={filterValue} onValueChange={(value) => onChangeFilter(value)}>
+            <SelectTrigger id="category">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
+            </SelectContent>
+          </Select>
+			<Table>
+				<TableCaption>Repositories</TableCaption>
+				<TableHeader>
+					<TableRow>
+						<TableHead
+							className="w-[100px]"
+							onClick={() => onClickSort("full_name")}
+						>
+							Name
+							{<ArrowUpDown />}
+						</TableHead>
+						<TableHead>Open Issues</TableHead>
+						<TableHead>Forks</TableHead>
+						<TableHead className="text-right">Stars</TableHead>
+						<TableHead
+							className="text-right"
+							onClick={() => onClickSort("updated")}
+						>
+							Last Updated {<ArrowUpDown />}
+						</TableHead>
+						<TableHead
+							className="text-right"
+							onClick={() => onClickSort("created")}
+						>
+							Created At {<ArrowUpDown />}
+						</TableHead>
+						<TableHead
+							className="text-right"
+							onClick={() => onClickSort("pushed")}
+						>
+							Last Push {<ArrowUpDown />}
+						</TableHead>
+					</TableRow>
+				</TableHeader>
+				<TableBody>
+					{repositories.map((repo) => (
+						<TableRow key={repo.name}>
+							<TableCell className="font-medium">
+								<a key={repo.name} target="_blank" href={repo.html_url}>
+									{repo.name}
+								</a>
+							</TableCell>
+							<TableCell>{repo.open_issues_count}</TableCell>
+							<TableCell>{repo.forks_count}</TableCell>
+							<TableCell>{repo.stargazers_count}</TableCell>
+							<TableCell>{dateFormatter(repo.updated_at)}</TableCell>
+							<TableCell>{dateFormatter(repo.created_at)}</TableCell>
+							<TableCell>{dateFormatter(repo.pushed_at)}</TableCell>
+						</TableRow>
+					))}
+				</TableBody>
+				<TableFooter>
+					{totalPages > 1 && (
+						<Pagination>
+							<PaginationContent>
+								<PaginationItem>
+									<PaginationPrevious
+										onClick={() => onPaginate(currentPage - 1)}
+										href="#"
+									/>
+								</PaginationItem>
+								{generatePaginationItems()}
+								{currentPage !== totalPages && (
+									<PaginationItem>
+										<PaginationEllipsis />
+									</PaginationItem>
+								)}
+								<PaginationItem>
+									<PaginationNext
+										onClick={() => onPaginate(currentPage + 1)}
+										href="#"
+									/>
+								</PaginationItem>
+							</PaginationContent>
+						</Pagination>
+					)}
+				</TableFooter>
+			</Table>
+		</div>
   );
 };
 
