@@ -40,5 +40,8 @@ Pagination, sorting and filtering are provided as well allow for fine-grain obse
 
 - The current Sorting UI, while functional, could be improved but toggling the icon on the table to point in the direction of the sort.
 
+- End-to-End Testing (Playwright, Cypress)
+Though admittedly overkill for an app this size, a test suite like Cypress or Playwright would allow really thorough testing of edge cases around sorting, filter, etc. While these are technically testable with a tool like Jest, the process of mocking the http requests can make for code that is cumbersome and difficult to read whereas the corresponding e2e tests are fairly straightforward. Of course we would still want to be intercepting and mocking requests within the e2e testing tool but this tends to be a straightforward process.
+
 
 
