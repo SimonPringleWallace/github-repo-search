@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
 import { useState } from "react";
+import { RepositoryTable, UserSearchResults } from "./components";
+import { parse } from "path";
 
 const formSchema = z.object({
   name: z.string().nonempty({
@@ -14,32 +16,10 @@ const formSchema = z.object({
   }),
 });
 
-interface IUser {
-  login: string;
-  avatar_url: string;
-}
-
-interface IUserSearchResult {
-  users: IUser[];
-  setUser: (user: string) => void;
-}
-
-const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
-  return (
-    <div className="h-96 w-64 overflow-x-auto absolute z-30 bg-slate-50">
-      {users.map((user) => (
-        <div className="flex justify-start items-center cursor-pointer my-4" key={user.login} onClick={() => setUser(user.login)}>
-          <img className="rounded-full h-10 w-10 mr-4" src={user.avatar_url} alt={user.login} />
-          <p>{user.login}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-
 export default function Home() {
   const [userResults, setUserResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [repositories, setRepositories] = useState([]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -47,8 +27,35 @@ export default function Home() {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+
+  function parseLinkHeader(header: string | null) {
+    if (!header) return {};
+
+    return header.split(",").reduce((acc, part) => {
+      const match = part.match(/<([^>]+)>;\s*rel="([^"]+)"/);
+      if (match) {
+        const [_, url, rel] = match;
+        acc[rel] = url;
+      }
+      return acc;
+    }, {});
+  }
+
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const res = await fetch(
+      `https://api.github.com/users/${data.name}/repos?per_page=5`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+        },
+      }
+    );
+    const resJson = await res.json();
+    // for pagination
+    const linkHeader = res.headers.get("Link");
+    const paginationLinks = parseLinkHeader(linkHeader);
+    console.log(paginationLinks);
+    setRepositories(resJson);
   };
 
   const onSelectUser = (user: string) => {
@@ -109,6 +116,9 @@ export default function Home() {
           <Button type="submit">Fetch</Button>
         </form>
       </Form>
+      {repositories.length > 0 && (
+        <RepositoryTable repositories={repositories} />
+      )}
     </div>
   );
 }
