@@ -25,12 +25,16 @@ interface IUserSearchResult {
 }
 
 const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
-  return users.map((user) => (
-    <div className="flex justify-start items-center cursor-pointer" key={user.login} onClick={() => setUser(user.login)}>
-      <img className="rounded-full h-10 w-10 mr-4" src={user.avatar_url} alt={user.login} />
-      <p>{user.login}</p>
+  return (
+    <div className="h-96 w-64 overflow-x-auto absolute z-30 bg-slate-50">
+      {users.map((user) => (
+        <div className="flex justify-start items-center cursor-pointer my-4" key={user.login} onClick={() => setUser(user.login)}>
+          <img className="rounded-full h-10 w-10 mr-4" src={user.avatar_url} alt={user.login} />
+          <p>{user.login}</p>
+        </div>
+      ))}
     </div>
-  ));
+  );
 };
 
 export default function Home() {
@@ -86,7 +90,7 @@ export default function Home() {
                         searchForUsers(e);
                         onChange(e.target.value);
                       }}
-                      className="w-60"
+                      className="w-60 relative"
                       placeholder="GitHub Username"
                       {...rest}
                     />
