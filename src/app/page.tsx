@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
+import { useState } from "react";
 
 const formSchema = z.object({
   name: z.string().nonempty({
@@ -13,7 +14,28 @@ const formSchema = z.object({
   }),
 });
 
+interface IUser {
+  login: string;
+  avatar_url: string;
+}
+
+interface IUserSearchResult {
+  users: IUser[];
+  setUser: (user: string) => void;
+}
+
+const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
+  return users.map((user) => (
+    <div className="flex justify-start items-center cursor-pointer" key={user.login} onClick={() => setUser(user.login)}>
+      <img className="rounded-full h-10 w-10 mr-4" src={user.avatar_url} alt={user.login} />
+      <p>{user.login}</p>
+    </div>
+  ));
+};
+
 export default function Home() {
+  const [userResults, setUserResults] = useState([]);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -25,6 +47,12 @@ export default function Home() {
     console.log(data);
   };
 
+  const onSelectUser = (user: string) => {
+    setSelectedUser(user);
+    form.setValue("name", user);
+    setUserResults([]);
+  }
+
   const searchForUsers = useDebouncedCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       console.log(e.target.value);
@@ -33,7 +61,8 @@ export default function Home() {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
         },
       })
-      console.log(await res.json());
+      const resJson = await res.json();
+      setUserResults(resJson.items);
   }, 500)
 
   return (
@@ -43,23 +72,35 @@ export default function Home() {
           <FormField
             name="name"
             control={form.control}
-            render={({field: { onChange, ...field }}) => (
-              <FormItem>
-                <FormLabel>User name</FormLabel>
-                <FormControl>
-                  <Input
-                    onChange={(e) => {
-                      searchForUsers(e);
-                      onChange(e);
-                    }}
-                    className="w-60"
-                    placeholder="GitHub Username"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({field: { onChange, ...field }}) => {
+               
+              const {value, ...rest } = field;
+              return (
+                <FormItem>
+                  <FormLabel>User name</FormLabel>
+                  <FormControl>
+                    <Input
+                      value={selectedUser || value}
+                      onChange={(e) => {
+                        setSelectedUser(null);
+                        searchForUsers(e);
+                        onChange(e.target.value);
+                      }}
+                      className="w-60"
+                      placeholder="GitHub Username"
+                      {...rest}
+                    />
+                  </FormControl>
+                  {userResults.length > 0 && (
+                    <UserSearchResults
+                      setUser={onSelectUser}
+                      users={userResults}
+                    />
+                  )}
+                  <FormMessage />
+                </FormItem>
+              );}
+            }
           />
           <Button type="submit">Fetch</Button>
         </form>
