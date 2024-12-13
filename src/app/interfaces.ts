@@ -9,7 +9,7 @@ export interface IPaginationData {
 	totalPages: number;
 }
 
-export type ISortKeys = "stars" | "forks" | "help-wanted-issues" | "updated";
+export type ISortKeys = "created" | "updated" | "pushed" | "full_name";
 
 export interface ISort {
 	sortKey: ISortKeys;

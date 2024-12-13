@@ -5,6 +5,7 @@ import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, Tabl
 import { IPaginationData, ISort, ISortKeys } from "./interfaces";
 import { ArrowUpDown } from 'lucide-react';
 import { useEffect, useState } from "react";
+import { dateFormatter } from "@/utils";
 
 interface IUser {
   login: string;
@@ -41,6 +42,8 @@ export const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
 interface IGitHubRepository {
   name: string;
   updated_at: string;
+	created_at: string;
+	pushed_at: string;
   stargazers_count: number;
   open_issues_count: number;
   forks_count: number;
@@ -106,31 +109,39 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort 
 		}
 		sortContents();
 	}, [sortDirection]);
-
+// created updated pushed full_name
 	return (
     <Table>
       <TableCaption>Repositories</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-[100px]">Name</TableHead>
-          <TableHead onClick={() => onClickSort("help-wanted-issues")}>
-            Open Issues {<ArrowUpDown />}
-          </TableHead>
-          <TableHead onClick={() => onClickSort("forks")}>
-            Forks
+          <TableHead
+            className="w-[100px]"
+            onClick={() => onClickSort("full_name")}
+          >
+            Name
             {<ArrowUpDown />}
           </TableHead>
-          <TableHead
-            className="text-right"
-            onClick={() => onClickSort("stars")}
-          >
-            Stars {<ArrowUpDown />}
-          </TableHead>
+          <TableHead>Open Issues</TableHead>
+          <TableHead>Forks</TableHead>
+          <TableHead className="text-right">Stars</TableHead>
           <TableHead
             className="text-right"
             onClick={() => onClickSort("updated")}
           >
             Last Updated {<ArrowUpDown />}
+          </TableHead>
+          <TableHead
+            className="text-right"
+            onClick={() => onClickSort("created")}
+          >
+            Created At {<ArrowUpDown />}
+          </TableHead>
+          <TableHead
+            className="text-right"
+            onClick={() => onClickSort("pushed")}
+          >
+            Last Push {<ArrowUpDown />}
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -145,7 +156,9 @@ export const RepositoryTable = ({ repositories, paginations, onPaginate, onSort 
             <TableCell>{repo.open_issues_count}</TableCell>
             <TableCell>{repo.forks_count}</TableCell>
             <TableCell>{repo.stargazers_count}</TableCell>
-            <TableCell>{repo.updated_at}</TableCell>
+            <TableCell>{dateFormatter(repo.updated_at)}</TableCell>
+            <TableCell>{dateFormatter(repo.created_at)}</TableCell>
+            <TableCell>{dateFormatter(repo.pushed_at)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
