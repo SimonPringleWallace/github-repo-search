@@ -1,4 +1,9 @@
+'use client';
+
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { IPaginationData } from "./interfaces";
+import { ArrowUpDown } from 'lucide-react';
 
 interface IUser {
   login: string;
@@ -45,7 +50,39 @@ interface IGitHubRepository {
 	}
 }
 
-export const RepositoryTable = ({ repositories }: { repositories: IGitHubRepository[] }) => {
+interface IRepositoryTableProps {
+  repositories: IGitHubRepository[];
+  paginations: IPaginationData | null;
+  onPaginate: (page: number) => void;
+}
+
+//gotta track teh current pagination
+export const RepositoryTable = ({ repositories, paginations, onPaginate }: IRepositoryTableProps) => {
+	const { currentPage, totalPages } = paginations ?? { currentPage: 1, totalPages: 1 };
+	const generatePaginationItems = () => {
+    // display either the first page or page before the current page
+    const startPage = Math.max(1, currentPage - 1);
+    // display either the last page or 2 pages beyond the current page
+    const endPage = Math.min(
+      totalPages,
+      currentPage + 2
+    );
+    const items = [];
+    if (!paginations) return null;
+    for (let i = startPage; i <= endPage; i++) {
+			// we never want to display more than 3 items
+			if(items.length === 3) break;
+
+      items.push(
+        <PaginationItem onClick={() => onPaginate(i)} key={i}>
+          <PaginationLink isActive={i === currentPage}>
+            {i}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    return items;
+  }
 	return (
     <Table>
       <TableCaption>Repositories</TableCaption>
@@ -63,20 +100,44 @@ export const RepositoryTable = ({ repositories }: { repositories: IGitHubReposit
         {repositories.map((repo) => (
           <TableRow key={repo.name}>
             <TableCell className="font-medium">
-							<a key={repo.name} target="_blank" href={repo.html_url}>
-								{repo.name}
-							</a>
-						</TableCell>
+              <a key={repo.name} target="_blank" href={repo.html_url}>
+                {repo.name}
+              </a>
+            </TableCell>
             <TableCell>{repo.open_issues_count}</TableCell>
             <TableCell>{repo.forks_count}</TableCell>
             <TableCell>{repo.stargazers_count}</TableCell>
             <TableCell>{repo.updated_at}</TableCell>
-            </TableRow>
+          </TableRow>
         ))}
       </TableBody>
+      <TableFooter>
+        {totalPages > 1 && (<Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => onPaginate(currentPage - 1)}
+                href="#"
+              />
+            </PaginationItem>
+            {generatePaginationItems()}
+            {currentPage !== totalPages && <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => onPaginate(currentPage + 1)}
+                href="#"
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>)}
+      </TableFooter>
     </Table>
   );
 };
+
+
 
 // pagination, sorting and filtering
 

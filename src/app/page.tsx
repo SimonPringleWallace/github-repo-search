@@ -8,7 +8,7 @@ import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
 import { useState } from "react";
 import { RepositoryTable, UserSearchResults } from "./components";
-import { parse } from "path";
+import { IPaginationData } from "./interfaces";
 
 const formSchema = z.object({
   name: z.string().nonempty({
@@ -20,6 +20,7 @@ export default function Home() {
   const [userResults, setUserResults] = useState([]);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [repositories, setRepositories] = useState([]);
+  const [paginationLinks, setPaginationLinks] = useState<IPaginationData | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -27,23 +28,36 @@ export default function Home() {
     },
   });
 
+// TODO: we actually aren't really using links here- should be removed
+  function parseLinkHeader(header: string | null): IPaginationData {
+    let totalPages = paginationLinks?.totalPages ?? 1;
+    let currentPage = paginationLinks?.totalPages ?? 1;
 
-  function parseLinkHeader(header: string | null) {
-    if (!header) return {};
-
-    return header.split(",").reduce((acc, part) => {
+    if (!header) return {} as IPaginationData;
+    // this needs to be made easier to read - and there may not be a 'link' header
+    const paginationLinksText = header.split(",").reduce((acc, part) => {
       const match = part.match(/<([^>]+)>;\s*rel="([^"]+)"/);
       if (match) {
         const [_, url, rel] = match;
+        if(rel === "last") {
+          const urlParams = new URLSearchParams(url);
+          totalPages = parseInt(urlParams.get("page") ?? "1");
+        }
+        if (rel === "next") {
+          const urlParams = new URLSearchParams(url);
+          currentPage = parseInt(urlParams.get("page") ?? "1") - 1;
+        }
         acc[rel] = url;
       }
       return acc;
-    }, {});
+    }, {} as IPaginationData["links"]);
+
+    return { totalPages, links: paginationLinksText, currentPage };
   }
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     const res = await fetch(
-      `https://api.github.com/users/${data.name}/repos?per_page=5`,
+      `https://api.github.com/users/${data.name}/repos?per_page=10`,
       {
         headers: {
           Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
@@ -53,8 +67,8 @@ export default function Home() {
     const resJson = await res.json();
     // for pagination
     const linkHeader = res.headers.get("Link");
-    const paginationLinks = parseLinkHeader(linkHeader);
-    console.log(paginationLinks);
+    const paginationData = parseLinkHeader(linkHeader);
+    setPaginationLinks(paginationData);
     setRepositories(resJson);
   };
 
@@ -63,6 +77,26 @@ export default function Home() {
     form.setValue("name", user);
     setUserResults([]);
   }
+
+  const onPaginate = async (page: number) => {
+    if(page < 1) return;
+    if(page > paginationLinks!.totalPages) return;
+
+    const res = await fetch(
+      `https://api.github.com/user/1969638/repos?per_page=10&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_GITHUB_API_KEY}`,
+        },
+      }
+    );
+    // TODO: this is dupliate code and should be broken out 
+    const resJson = await res.json();
+     const linkHeader = res.headers.get("Link");
+     const paginationData = parseLinkHeader(linkHeader);
+     setPaginationLinks(paginationData);
+     setRepositories(resJson);
+  };
 
   const searchForUsers = useDebouncedCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,9 +117,8 @@ export default function Home() {
           <FormField
             name="name"
             control={form.control}
-            render={({field: { onChange, ...field }}) => {
-               
-              const {value, ...rest } = field;
+            render={({ field: { onChange, ...field } }) => {
+              const { value, ...rest } = field;
               return (
                 <FormItem>
                   <FormLabel>User name</FormLabel>
@@ -102,7 +135,7 @@ export default function Home() {
                       {...rest}
                     />
                   </FormControl>
-                  {userResults.length > 0 && (
+                  {userResults?.length > 0 && (
                     <UserSearchResults
                       setUser={onSelectUser}
                       users={userResults}
@@ -110,14 +143,18 @@ export default function Home() {
                   )}
                   <FormMessage />
                 </FormItem>
-              );}
-            }
+              );
+            }}
           />
           <Button type="submit">Fetch</Button>
         </form>
       </Form>
       {repositories.length > 0 && (
-        <RepositoryTable repositories={repositories} />
+        <RepositoryTable
+          onPaginate={onPaginate}
+          paginations={paginationLinks}
+          repositories={repositories}
+        />
       )}
     </div>
   );
