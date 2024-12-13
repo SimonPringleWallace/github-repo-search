@@ -8,37 +8,27 @@ import { IPaginationData, ITableFilterValue, ISort, ITableSortKeys, IGitHubRepos
 
 
 
-interface IRepositoryTableProps {
-  repositories: IGitHubRepository[];
-  paginations: IPaginationData | null;
-  filterValue: ITableFilterValue;
+interface ITablePaginationProps {
+  paginationData: IPaginationData | null;
   onPaginate: (page: number) => void;
-  onSort: (sort: ISort) => Promise<void>;
-  onChangeFilter: (filter: ITableFilterValue) => void;
 }
 
-//gotta track teh current pagination
-export const RepositoryTable = ({
-  repositories,
-  paginations,
-  filterValue,
-  onChangeFilter,
+const TablePagination = ({
+  paginationData,
   onPaginate,
-  onSort,
-}: IRepositoryTableProps) => {
-  const { currentPage, totalPages } = paginations ?? {
+}: ITablePaginationProps) => {
+  const { currentPage, totalPages } = paginationData ?? {
     currentPage: 1,
     totalPages: 1,
   };
-  const [sortDirection, setSortDirection] = useState<ISort>({} as ISort);
 
-  const generatePaginationItems = () => {
+  const generatePaginationOptions = () => {
     // display either the first page or page before the current page
     const startPage = Math.max(1, currentPage - 1);
     // display either the last page or 2 pages beyond the current page
     const endPage = Math.min(totalPages, currentPage + 2);
     const items = [];
-    if (!paginations) return null;
+
     for (let i = startPage; i <= endPage; i++) {
       // we never want to display more than 3 items
       if (items.length === 3) break;
@@ -51,6 +41,56 @@ export const RepositoryTable = ({
     }
     return items;
   };
+
+  if (totalPages === 1) return null;
+
+  return (
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious
+            data-testid="paginate-previous"
+            onClick={() => onPaginate(currentPage - 1)}
+          />
+        </PaginationItem>
+        {generatePaginationOptions()}
+        {currentPage !== totalPages && (
+          <PaginationItem>
+            <PaginationEllipsis />
+          </PaginationItem>
+        )}
+        <PaginationItem>
+          <PaginationNext
+            data-testid="paginate-next"
+            onClick={() => onPaginate(currentPage + 1)}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
+  );
+};
+
+
+interface IRepositoryTableProps {
+  repositories: IGitHubRepository[];
+  paginationData: IPaginationData | null;
+  filterValue: ITableFilterValue;
+  onPaginate: (page: number) => void;
+  onSort: (sort: ISort) => Promise<void>;
+  onChangeFilter: (filter: ITableFilterValue) => void;
+}
+
+//gotta track teh current pagination
+export const RepositoryTable = ({
+  repositories,
+  paginationData,
+  filterValue,
+  onChangeFilter,
+  onPaginate,
+  onSort,
+}: IRepositoryTableProps) => {
+ 
+  const [sortDirection, setSortDirection] = useState<ISort>({} as ISort);
 
   const onClickSort = (sortKey: ITableSortKeys) => {
     if (sortDirection.sortKey !== sortKey) {
@@ -129,30 +169,10 @@ export const RepositoryTable = ({
           ))}
         </TableBody>
       </Table>
-      {totalPages > 1 && (
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                data-testid="paginate-previous"
-                onClick={() => onPaginate(currentPage - 1)}
-              />
-            </PaginationItem>
-            {generatePaginationItems()}
-            {currentPage !== totalPages && (
-              <PaginationItem>
-                <PaginationEllipsis />
-              </PaginationItem>
-            )}
-            <PaginationItem>
-              <PaginationNext
-                data-testid="paginate-next"
-                onClick={() => onPaginate(currentPage + 1)}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
+      <TablePagination
+        paginationData={paginationData}
+        onPaginate={onPaginate}
+      />
     </div>
   );
 };

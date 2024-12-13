@@ -16,11 +16,15 @@ interface IUser {
 interface IUserSearchResult {
   users: IUser[];
   setUser: (user: string) => void;
+	ref: React.RefObject<HTMLDivElement | null>;
 }
 
-export const UserSearchResults = ({ users, setUser }: IUserSearchResult) => {
+export const UserSearchResults = ({ users, ref, setUser }: IUserSearchResult) => {
+	
+	if(!users) return null;
+
   return (
-    <div className="h-96 w-64 overflow-x-auto absolute z-30 bg-slate-50">
+    <div ref={ref} className="h-96 w-64 overflow-x-auto absolute z-30 bg-slate-50">
       {users.map((user) => (
         <div
           className="flex justify-start items-center cursor-pointer my-4"

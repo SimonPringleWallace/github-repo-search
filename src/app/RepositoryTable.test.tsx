@@ -26,7 +26,7 @@ describe("Repository Table component", () => {
     render(
       <RepositoryTable
         onPaginate={onPaginate}
-        paginations={paginationData}
+        paginationData={paginationData}
         repositories={repositories}
         onSort={onSort}
         filterValue={filterValue}
@@ -41,7 +41,7 @@ describe("Repository Table component", () => {
       render(
         <RepositoryTable
           onPaginate={onPaginate}
-          paginations={paginationData}
+          paginationData={paginationData}
           repositories={repositories}
           onSort={onSort}
           filterValue={filterValue}
@@ -55,7 +55,7 @@ describe("Repository Table component", () => {
       render(
         <RepositoryTable
           onPaginate={onPaginate}
-          paginations={paginationData}
+          paginationData={paginationData}
           repositories={repositories}
           onSort={onSort}
           filterValue={filterValue}
