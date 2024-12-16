@@ -4,7 +4,7 @@ import { dateFormatter } from "@/utils";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ArrowUpDown } from "lucide-react";
 import { useState, useEffect } from "react";
-import { IPaginationData, ITableFilterValue, ISort, ITableSortKeys, IGitHubRepository } from "./interfaces";
+import { IPaginationData, ITableFilterValue, ISort, ITableSortKeys, IGitHubRepository } from "../interfaces";
 
 
 

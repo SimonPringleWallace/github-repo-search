@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import RepositoryTable from "./RepositoryTable";
 import "@testing-library/jest-dom"
-import { IGitHubRepository } from "./interfaces";
+import { IGitHubRepository } from "../interfaces";
 
 describe("Repository Table component", () => {
   const onPaginate = jest.fn();
@@ -25,6 +25,7 @@ describe("Repository Table component", () => {
       const paginationData = { currentPage: 1, totalPages: 5 };
     render(
       <RepositoryTable
+        userName="testUser"
         onPaginate={onPaginate}
         paginationData={paginationData}
         repositories={repositories}
@@ -40,6 +41,7 @@ describe("Repository Table component", () => {
         const paginationData = { currentPage: 1, totalPages: 5 };
       render(
         <RepositoryTable
+          userName="testUser"
           onPaginate={onPaginate}
           paginationData={paginationData}
           repositories={repositories}
@@ -54,6 +56,7 @@ describe("Repository Table component", () => {
         const paginationData = { currentPage: 1, totalPages: 1 };
       render(
         <RepositoryTable
+          userName="testUser"
           onPaginate={onPaginate}
           paginationData={paginationData}
           repositories={repositories}

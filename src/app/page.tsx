@@ -8,7 +8,7 @@ import { z } from "zod";
 import { useDebouncedCallback } from "use-debounce";
 import { useEffect, useRef, useState } from "react";
 import { UserSearchResults } from "./components";
-import RepositoryTable from './RepositoryTable';
+import RepositoryTable from './repository-table/RepositoryTable';
 import { IPaginationData, ISort, ITableFilterValue } from "./interfaces";
 import {Github} from 'lucide-react';
 
@@ -62,6 +62,7 @@ export default function Home() {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!data) return;
+    setSelectedUser(data.name);
     setQueryString(`https://api.github.com/users/${data.name}/repos?per_page=10`);
   };
 
