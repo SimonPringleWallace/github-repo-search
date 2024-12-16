@@ -128,6 +128,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!queryString) return;
+    // must be a vaild github api url
+    if (!queryString.includes('https://api.github.com')) return;
+
     const fetchRepositories = async () => {
       try {
         const res = await fetch(

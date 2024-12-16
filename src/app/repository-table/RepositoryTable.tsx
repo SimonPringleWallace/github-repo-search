@@ -1,3 +1,5 @@
+'use client'
+
 import { PaginationItem, PaginationLink, Pagination, PaginationContent, PaginationPrevious, PaginationEllipsis, PaginationNext } from "@/components/ui/pagination";
 import { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { dateFormatter } from "@/utils";
